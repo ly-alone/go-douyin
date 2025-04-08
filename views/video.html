@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频去水印</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header {
+            padding: 15px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .header a {
+            margin: 0 15px;
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .header a:hover {
+            text-decoration: underline;
+        }
+
+        .search-box {
+            margin-top: 50px;
+            padding: 20px;
+            display: inline-block;
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-box input {
+            width: calc(100% - 100px);
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: #aaa;
+        }
+
+        .search-box button {
+            padding: 15px 25px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-left: 10px;
+        }
+
+        .search-box button:hover {
+            background-color: #45a049;
+        }
+
+        .response {
+            margin-top: 30px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .response span {
+            display: block;
+            margin-top: 10px;
+        }
+
+        .response a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .response a:hover {
+            text-decoration: underline;
+        }
+
+        /* Add responsive design */
+        @media (max-width: 768px) {
+            .search-box {
+                margin-top: 30px;
+                padding: 15px;
+            }
+
+            .search-box input {
+                width: calc(100% - 90px);
+            }
+
+            .search-box button {
+                width: 100%;
+                margin-top: 10px;
+            }
+        }
+
+        /* Style for video information */
+        .video-container {
+            margin-top: 30px;
+            display: none;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .video-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .video-container h3 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .copy-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: #fff;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .copy-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="#">首页</a>
+    <a href="#">去水印</a>
+    <a href="#">视频取帧</a>
+    <a href="#">问题反馈</a>
+    <a href="#">登录</a>
+</div>
+
+<div class="search-box">
+    <input id="video-link" type="text" placeholder="请输入抖音、小红书、快手等作品链接">
+    <button onclick="fetchVideo()">去水印</button>
+</div>
+<div id="response" class="response"></div>
+
+<!-- 视频信息展示区域 -->
+<div id="video-container" class="video-container display" >
+    <img id="cover-image" src="" alt="封面图">
+    <h3 id="video-title"></h3>
+    <button id="copy-button" class="copy-button">点击复制视频地址</button>
+</div>
+
+<script>
+    async function fetchVideo() {
+        const link = document.getElementById('video-link').value;
+        const responseBox = document.getElementById('response');
+        const videoContainer = document.getElementById('video-container');
+        const coverImage = document.getElementById('cover-image');
+        const videoTitle = document.getElementById('video-title');
+        const copyButton = document.getElementById('copy-button');
+
+        // 如果链接为空
+        if (!link.trim()) {
+            responseBox.innerHTML = "<span style='color: red;'>请输入有效的链接！</span>";
+            return;
+        }
+
+        try {
+            // 发送请求到后端
+            const response = await fetch('/video/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: link })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                if (data.code === 200 && data.data.video_url) {
+                    // 如果返回了视频数据，设置封面图、标题和视频链接
+                    coverImage.src = data.data.cover_url || '';
+                    videoTitle.textContent = data.data.title || '视频标题';
+
+                    // 设置点击按钮复制视频地址
+                    copyButton.onclick = function() {
+                        navigator.clipboard.writeText(data.data.video_url)
+                            .then(() => {
+                                alert("视频地址已复制！");
+                            })
+                            .catch(err => {
+                                alert("复制失败，请手动复制！");
+                            });
+                    };
+
+                    // 显示视频信息
+                    videoContainer.style.display = 'block';
+                    responseBox.innerHTML = "<span style='color: green;'>去水印成功！</span>";
+                } else {
+                    responseBox.innerHTML = `<span style="color: red;">视频 URL 无效！</span>`;
+                }
+            } else {
+                responseBox.innerHTML = `<span style="color: red;">失败：${data.msg}</span>`;
+            }
+        } catch (error) {
+            // 捕获错误
+            responseBox.innerHTML = `<span style="color: red;">请求出错：${error.message}</span>`;
+        }
+    }
+</script>
+
+</body>
+</html>

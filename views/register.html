@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <style>
+        /* 复用登录页面的基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            background-attachment: fixed;
+        }
+
+        /* 注册容器 - 保持登录样式 */
+        .register-container {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 2.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 440px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .register-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 头部样式调整 */
+        .register-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .register-header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .register-header p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        /* 复用输入框样式 */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.75rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 0 0.25rem;
+            color: #a0aec0;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .input-group input:focus + label,
+        .input-group input:not(:placeholder-shown) + label {
+            top: 0;
+            font-size: 0.8rem;
+            color: #4ecdc4;
+        }
+
+        /* 密码显示切换 */
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.3s;
+        }
+
+        .password-toggle:hover {
+            color: #4ecdc4;
+        }
+
+        /* 注册按钮 */
+        .register-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .register-btn:hover {
+            background: #45b7b0;
+            transform: translateY(-2px);
+        }
+
+        /* 附加链接调整 */
+        .additional-links {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+
+        .additional-links a {
+            color: #4ecdc4;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .additional-links a:hover {
+            background: rgba(78, 205, 196, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* 错误提示复用 */
+        .error-message {
+            background: #ffe3e3;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffc9c9;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .register-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="register-container">
+    <div class="register-header">
+        <h1>创建账户</h1>
+        <p>立即注册开启您的旅程</p>
+    </div>
+
+    <form id="registerForm">
+        <div id="errorContainer"></div>
+
+        <div class="input-group">
+            <input
+                    type="text"
+                    id="username"
+                    placeholder=" "
+                    autocomplete="username"
+                    required
+            >
+            <label for="username">用户名</label>
+        </div>
+
+        <div class="input-group">
+            <input
+                    type="email"
+                    id="email"
+                    placeholder=" "
+                    autocomplete="email"
+                    required
+            >
+            <label for="email">电子邮箱</label>
+        </div>
+
+        <div class="input-group">
+            <input
+                    type="password"
+                    id="password"
+                    placeholder=" "
+                    autocomplete="new-password"
+                    required
+            >
+            <label for="password">密码</label>
+            <span class="password-toggle">👁️</span>
+        </div>
+
+        <div class="input-group">
+            <input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder=" "
+                    autocomplete="new-password"
+                    required
+            >
+            <label for="confirmPassword">确认密码</label>
+            <span class="password-toggle">👁️</span>
+        </div>
+
+        <button type="submit" class="register-btn">立即注册</button>
+
+        <div class="additional-links">
+            <p>已有账户？ <a href="/">立即登录</a></p>
+        </div>
+    </form>
+</div>
+
+<script>
+    const registerForm = document.getElementById('registerForm');
+    const errorContainer = document.getElementById('errorContainer');
+
+    // 密码显示切换（处理多个切换按钮）
+    document.querySelectorAll('.password-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const input = this.parentElement.querySelector('input');
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            this.textContent = isPassword ? '🔒' : '👁️';
+        });
+    });
+
+    // 表单提交处理
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorContainer.innerHTML = '';
+
+        const formData = {
+            username: document.getElementById('username').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            confirmPassword: document.getElementById('confirmPassword').value
+        };
+
+        // 前端验证
+        if (!formData.username || !formData.email || !formData.password) {
+            showError('请填写所有必填字段');
+            return;
+        }
+
+        if (!/^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/.test(formData.email)) {
+            showError('请输入有效的电子邮箱');
+            return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+            showError('两次输入的密码不一致');
+            return;
+        }
+
+        const submitBtn = registerForm.querySelector('button');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '注册中...';
+
+        try {
+            const response = await fetch('/tool/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || `注册失败 (${response.status})`);
+            }else{
+                window.location.href = '/';
+            }
+
+        } catch (error) {
+            showError(error.message);
+            console.error('注册错误:', error);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '立即注册';
+        }
+    });
+
+    // 复用错误提示函数
+    function showError(message) {
+        errorContainer.innerHTML = `
+            <div class="error-message">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12" y2="16"/>
+                </svg>
+                ${message}
+            </div>
+        `;
+    }
+
+    // 自动聚焦用户名输入框
+    document.getElementById('username').focus();
+</script>
+</body>
+</html>

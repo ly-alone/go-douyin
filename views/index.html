@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业登录系统</title>
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            background-attachment: fixed;
+        }
+
+        /* 登录容器 */
+        .login-container {
+            background: rgba(255, 255, 255, 0.96);
+            padding: 2.5rem;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 440px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .login-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 头部样式 */
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        /* 输入框样式 */
+        .input-group {
+            position: relative;
+            margin-bottom: 1.75rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.5rem;
+            outline: none;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+        }
+
+        .input-group label {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: white;
+            padding: 0 0.25rem;
+            color: #a0aec0;
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .input-group input:focus + label,
+        .input-group input:not(:placeholder-shown) + label {
+            top: 0;
+            font-size: 0.8rem;
+            color: #4ecdc4;
+        }
+
+        /* 密码显示切换 */
+        .password-toggle {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.3s;
+        }
+
+        .password-toggle:hover {
+            color: #4ecdc4;
+        }
+
+        /* 登录按钮 */
+        .login-btn {
+            width: 100%;
+            padding: 1rem;
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .login-btn:hover {
+            background: #45b7b0;
+            transform: translateY(-2px);
+        }
+
+        /* 附加链接 */
+        .additional-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .link-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .additional-links a {
+            color: #4ecdc4;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .additional-links a:hover {
+            background: rgba(78, 205, 196, 0.1);
+            transform: translateY(-1px);
+        }
+
+        /* 错误提示 */
+        .error-message {
+            background: #ffe3e3;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ffc9c9;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 1.5rem;
+            }
+
+            .additional-links {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .link-group {
+                justify-content: space-around;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-header">
+        <h1>欢迎回来</h1>
+        <p>请输入您的凭证以继续访问</p>
+    </div>
+
+    <form id="loginForm">
+        <div id="errorContainer"></div>
+
+        <div class="input-group">
+            <input
+                    type="text"
+                    id="username"
+                    placeholder=" "
+                    autocomplete="username"
+                    required
+            >
+<!--            ///邮箱-->
+            <label for="username">用户名</label>
+        </div>
+
+        <div class="input-group">
+            <input
+                    type="password"
+                    id="password"
+                    placeholder=" "
+                    autocomplete="current-password"
+                    required
+            >
+            <label for="password">密码</label>
+            <span class="password-toggle">👁️</span>
+        </div>
+
+        <div class="additional-links">
+            <label class="remember-me">
+                <input type="checkbox" id="rememberMe">
+                <span>记住我</span>
+            </label>
+            <div class="link-group">
+                <a href="#forgot">忘记密码？</a>
+                <a href="/register">注册</a>
+            </div>
+        </div>
+
+        <button type="submit" class="login-btn">立即登录</button>
+    </form>
+</div>
+
+<script>
+    const AUTH_TOKEN_KEY = 'sys_auth_token';
+    const loginForm = document.getElementById('loginForm');
+    const errorContainer = document.getElementById('errorContainer');
+    const rememberMe = document.getElementById('rememberMe');
+
+    // 初始化记住的用户名
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    if (savedUsername) {
+        document.getElementById('username').value = savedUsername;
+        rememberMe.checked = true;
+    }
+
+    // 密码显示切换
+    document.querySelector('.password-toggle').addEventListener('click', function() {
+        const passwordInput = document.getElementById('password');
+        const isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        this.textContent = isPassword ? '🔒' : '👁️';
+    });
+
+    // 表单提交处理
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorContainer.innerHTML = '';
+
+        const formData = {
+            username: document.getElementById('username').value.trim(),
+            password: document.getElementById('password').value,
+            rememberMe: rememberMe.checked
+        };
+
+        if (!formData.username || !formData.password) {
+            showError('请输入用户名和密码');
+            return;
+        }
+
+        const submitBtn = loginForm.querySelector('button');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '登录中...';
+
+        try {
+            const response = await fetch('/tool/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.msg || `登录失败 (${response.status})`);
+            }
+
+            if (data.data?.token) {
+                localStorage.setItem(AUTH_TOKEN_KEY, data.data.token);
+
+                if (formData.rememberMe) {
+                    localStorage.setItem('rememberedUsername', formData.username);
+                } else {
+                    localStorage.removeItem('rememberedUsername');
+                }
+
+                // 使用 authFetch 获取当前用户数据
+                // 跳转到主页
+                window.location.href = '/home';
+            }
+        } catch (error) {
+            showError(error.message);
+            console.error('登录错误:', error);
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '立即登录';
+        }
+    });
+
+    // 显示错误信息
+    function showError(message) {
+        errorContainer.innerHTML = `
+            <div class="error-message">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12" y2="16"/>
+                </svg>
+                ${message}
+            </div>
+        `;
+    }
+
+    // 认证请求封装
+    async function authFetch(url, options = {}) {
+        const token = localStorage.getItem(AUTH_TOKEN_KEY);
+        if (!token) window.location.href = '/login';
+
+        const headers = {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers: { ...headers, ...options.headers }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem(AUTH_TOKEN_KEY);
+                window.location.href = '/login';
+            }
+            return response;
+        } catch (error) {
+            console.error('请求失败:', error);
+            throw error;
+        }
+    }
+
+    // 自动聚焦
+    if (!savedUsername) document.getElementById('username').focus();
+</script>
+</body>
+</html>

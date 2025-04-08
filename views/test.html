@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频处理平台</title>
+
+    <!-- 在CSS中添加以下样式 -->
+    <style>
+
+        /* 放大镜样式 */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow: auto;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-content {
+            display: block;
+            max-width: 80vw;
+            max-height: 80vh;
+            margin: 5% auto;
+            animation: scaleUp 0.3s;
+            cursor: zoom-out;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            border-radius: 4px;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            transition: 0.3s;
+            cursor: pointer;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-btn:hover {
+            color: #4ecdc4;
+        }
+
+        #img-caption {
+            color: #fff;
+            text-align: center;
+            padding: 15px;
+            font-size: 1.1em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleUp {
+            from { transform: scale(0.8); }
+            to { transform: scale(1); }
+        }
+
+        /* 原图添加点击手势 */
+        .frame-preview {
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+
+        .frame-preview:hover {
+            transform: scale(1.03);
+        }
+        /* 添加展示区域样式 */
+        .result-container {
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1.5rem;
+        }
+
+        .frame-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .frame-card {
+            background: white;
+            border-radius: 0.8rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .frame-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .frame-preview {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-bottom: 1px solid #eee;
+        }
+
+        .frame-info {
+            padding: 1rem;
+        }
+
+        .frame-name {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.6rem;
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .download-btn:hover {
+            background: #45b7b0;
+        }
+
+        .download-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+
+        /* 新增样式 */
+        .frame-result {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .frame-result img {
+            border: 2px solid #4ecdc4;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        /* 视频信息展示样式 */
+        .video-info {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.8rem;
+        }
+
+        .video-title {
+            color: #2d3748;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .video-cover {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .video-url-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .video-url {
+            max-width: 70%; /* 限制视频地址的宽度 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap; /* 保证地址不换行 */
+            font-size: 14px;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            padding: 6px 12px;  /* 内边距适当缩小 */
+            background-color: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 20px;  /* 圆角 */
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 12px;
+            white-space: nowrap;  /* 防止按钮内容换行 */
+            max-width: 150px;  /* 设置最大宽度 */
+            width: auto;  /* 按钮宽度根据内容自适应 */
+        }
+
+        .copy-btn:hover {
+            background-color: #45b7b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        /* 与登录页面相同的背景色 */
+        body {
+            min-height: 100vh;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: #2d3748;
+            padding: 20px;
+        }
+
+        /* 导航栏 */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            border-radius: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .header a {
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.8rem;
+            transition: all 0.3s;
+        }
+
+        .header a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: #4ecdc4;
+        }
+
+        .header a.active {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+        }
+
+        /* 内容容器 */
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            max-width: 800px;
+            margin: 2rem auto;
+            transition: all 0.3s;
+            display: none;
+        }
+
+        .container.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        /* 输入组件 */
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-bottom: 2px solid #ddd;
+            font-size: 1rem;
+            transition: all 0.3s;
+            background: transparent;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #4ecdc4;
+            outline: none;
+        }
+
+        /* 与登录页面相同的按钮样式 */
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #45b7b0;
+            transform: translateY(-2px);
+        }
+
+        /* 响应消息 */
+        .response {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 0.8rem;
+            text-align: center;
+        }
+
+        .success {
+            background: #f0fff4;
+            color: #2f855a;
+        }
+
+        .error {
+            background: #fff5f5;
+            color: #c53030;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .header {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            .container {
+                padding: 1.5rem;
+                margin: 1rem auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a class="active" onclick="showSection('home')">首页</a>
+    <a onclick="showSection('removeWatermark')">去水印</a>
+    <a onclick="showSection('extractFrames')">视频取帧</a>
+    <a onclick="showSection('feedback')">问题反馈</a>
+</div>
+
+<!-- 首页 -->
+<div id="home" class="container active">
+    <h1 style="text-align:center; margin-bottom:1rem; color: #333;">视频处理平台</h1>
+    <p style="text-align:center; color:#666;">专业视频处理解决方案</p>
+</div>
+
+<!-- 去水印部分 -->
+<div id="removeWatermark" class="container">
+    <div class="input-group">
+        <input id="video-link" type="text" placeholder="输入视频链接" required>
+    </div>
+    <button id="startButton" onclick="fetchVideo()">开始处理</button>
+    <div id="response" class="response"></div>
+
+    <!-- 进度条容器 -->
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
+
+<!-- 视频取帧 -->
+<div id="extractFrames" class="container">
+    <div class="input-group">
+        <input id="video-file" type="file" accept="video/*">
+    </div>
+
+    <!-- 新增帧间隔设置 -->
+    <div class="input-group">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <label style="white-space: nowrap;">帧间隔（秒）：</label>
+            <input
+                    id="frame-interval"
+                    type="number"
+                    min="1"
+                    value="3"
+                    style="width: 100px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;"
+            >
+        </div>
+    </div>
+
+    <button id="uploadButton" onclick="uploadVideo()">上传视频</button>
+    <div id="video-response" class="response"></div>
+    <!-- 进度条容器 -->
+    <div class="progress-container" id="progressContainer_upload" style="display:none;">
+        <div class="progress-bar" id="progressBar_upload"></div>
+    </div>
+    <!-- 在页面底部添加放大镜容器 -->
+    <div id="image-modal" class="image-modal">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="expanded-img">
+        <div id="img-caption"></div>
+    </div>
+</div>
+
+
+<!-- 问题反馈 -->
+<div id="feedback" class="container">
+    <div class="input-group">
+        <textarea id="feedback-text" placeholder="请描述您的问题..." rows="4"></textarea>
+    </div>
+    <button onclick="submitFeedback()">提交反馈</button>
+    <div id="feedback-response" class="response"></div>
+</div>
+
+<script>
+    // 在前端代码中定义全局错误处理（推荐放在公共JS中）
+    const ERROR_IMAGE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; // 1x1透明像素
+    // 模块切换功能
+    function showSection(sectionId) {
+        document.querySelectorAll('.header a').forEach(link => {
+            link.classList.remove('active');
+        });
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.container').forEach(container => {
+            container.classList.remove('active');
+        });
+        document.getElementById(sectionId).classList.add('active');
+    }
+
+    // 初始化显示首页
+    document.addEventListener('DOMContentLoaded', () => {
+        showSection('home');
+    });
+
+    // 封装带认证的fetch请求
+    async function authFetch(url, options = {}) {
+        const token = localStorage.getItem('sys_auth_token');
+        if (!token) {
+            window.location.href = 'http://127.0.0.1:9999/';
+            return Promise.reject('未授权');
+        }
+
+        // 动态设置 headers
+        const headers = {
+            'Authorization': `Bearer ${token}`
+        };
+
+        // 如果是 FormData 请求，不设置 Content-Type
+        if (!(options.body instanceof FormData)) {
+            headers['Content-Type'] = 'application/json';
+        }
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...headers,
+                    ...options.headers
+                }
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem('sys_auth_token');
+                window.location.href = '/';
+            }
+            return response;
+        } catch (error) {
+            console.error('请求失败:', error);
+            throw error;
+        }
+    }
+
+    // 去水印功能
+    async function fetchVideo() {
+        // 更新按钮为 "正在处理..."
+        const startButton = document.getElementById('startButton');
+        startButton.disabled = true;  // 禁用按钮防止重复点击
+        startButton.textContent = '正在处理...';
+
+        // 显示进度条
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        progressContainer.style.display = 'block';
+
+        // 初始化进度为 0
+        let progress = 0;
+        progressBar.style.width = progress + '%';
+
+        // 模拟进度条的更新（你可以替换成实际的后台进度更新）
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+            if (progress >= 100) {
+                clearInterval(progressInterval); // 完成后停止更新
+            }
+        }, 500); // 每 500ms 更新一次进度条
+
+        if (!localStorage.getItem('sys_auth_token')) {
+            window.location.href = 'http://127.0.0.1:9999/';
+            return;
+        }
+
+        const link = document.getElementById('video-link').value;
+        const responseBox = document.getElementById('response');
+        responseBox.innerHTML = ''; // 清空旧内容
+
+        try {
+            const response = await authFetch('/tool/add', {
+                method: 'POST',
+                body: JSON.stringify({videoUrl: link})
+            });
+
+            const data = await response.json();
+
+            if (data.code === 200) {
+                const videoUrl = data.data.video_url;
+                const images = data.data.images;
+
+                let htmlContent = `
+          <div class="video-info">
+            <h3 class="video-title">${data.data.title}</h3>
+        `;
+
+                // 显示封面图
+                if (data.data.cover_url) {
+                    htmlContent += `<img src="${data.data.cover_url}" class="video-cover" alt="视频封面">`;
+                }
+
+                // 如果 video_url 不为空，显示视频
+                if (videoUrl) {
+                    htmlContent += `
+            <div class="video-url-group">
+              <div class="video-url">无水印视频地址：${videoUrl}</div>
+              <button class="copy-btn" onclick="copyToClipboard('${videoUrl}')">复制</button>
+            </div>
+            <video controls width="600" src="${videoUrl}" onerror="this.style.display='none'; showVideoLink('${videoUrl}')"></video>
+          `;
+                }
+
+                // 如果有图片，展示图片
+                if (images && images.length > 0) {
+                    htmlContent += `
+            <div class="video-images">
+              <h4>图片展示：</h4>
+              ${images.map(img => `
+                <a href="${img}" target="_blank">
+                  <img src="${img}" class="video-image" alt="视频图像" style="width: 100%; max-width: 300px; margin: 10px;">
+                </a>
+              `).join('')}
+            </div>
+          `;
+                }
+
+                htmlContent += '</div>';
+                responseBox.innerHTML = htmlContent;
+
+                // 完成处理后恢复按钮状态
+                startButton.textContent = '开始处理';
+                startButton.disabled = false;
+
+            } else {
+                throw new Error(data.msg || '请求失败');
+            }
+        } catch (error) {
+            responseBox.className = 'response error';
+            responseBox.innerHTML = error.message;
+
+            // 完成处理后恢复按钮状态
+            startButton.textContent = '开始处理';
+            startButton.disabled = false;
+        }
+    }
+
+    // 复制功能
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                alert('已复制到剪贴板');
+            })
+            .catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+    }
+
+    // 上传视频功能
+    async function uploadVideo() {
+        const fileInput = document.getElementById('video-file');
+        const uploadButton = document.getElementById('uploadButton');
+        const progressContainer = document.getElementById('progressContainer_upload');
+        const progressBar = document.getElementById('progressBar_upload');
+        const responseBox = document.getElementById('video-response');
+        const frameIntervalInput = document.getElementById('frame-interval');
+
+        if (!fileInput.files[0]) {
+            alert('请选择视频文件');
+            return;
+        }
+
+        // 获取并验证帧间隔值
+        let interval = parseInt(frameIntervalInput.value) || 3;
+        interval = Math.max(1, interval); // 确保最小1秒
+
+        // 检查 token
+        if (!localStorage.getItem('sys_auth_token')) {
+            window.location.href = '/';
+            return;
+        }
+
+        uploadButton.disabled = true;
+        uploadButton.textContent = '正在处理...';
+        progressContainer.style.display = 'block';
+
+        const formData = new FormData();
+        formData.append('video', fileInput.files[0]);
+        formData.append('fps', interval); // 添加帧间隔参数
+
+        try {
+            const response = await authFetch('/tool/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.code === 200) {
+                responseBox.className = 'response success';
+                responseBox.innerHTML = `
+            <div class="result-header">
+                <h3>${data.msg}</h3>
+                <p>共提取 ${data.data.length} 个视频帧</p>
+            </div>
+            <div class="frame-grid">
+                ${data.data.map(frame => `
+                    <div class="frame-card">
+                        <img
+                            src="${frame.Path}"
+                            class="frame-preview"
+                            alt="${frame.Name}"
+                            loading="lazy"
+                            onerror="this.src='/static/img/error.png'"
+                        >
+                        <div class="frame-info">
+                            <div class="frame-name">${frame.Name}</div>
+                            <button
+                                class="download-btn"
+                                onclick="downloadFrame('${frame.Path}', '${frame.Name}')"
+                            >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                下载帧图像
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+            } else {
+                throw new Error(data.msg || '上传失败');
+            }
+        } catch (error) {
+            responseBox.className = 'response error';
+            responseBox.innerHTML = `上传失败：${error.message}`;
+        } finally {
+            uploadButton.disabled = false;
+            uploadButton.textContent = '上传视频';
+            progressContainer.style.display = 'none';
+        }
+    }
+
+    function safeImageLoader(imgElement, url) {
+        let retryCount = 0;
+
+        const loadImage = () => {
+            // 添加随机参数防止缓存
+            const cacheBusterUrl = url + `?retry=${retryCount}&t=${Date.now()}`;
+
+            fetch(cacheBusterUrl, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('sys_auth_token')}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Image load failed');
+                    return response.blob();
+                })
+                .then(blob => {
+                    imgElement.src = URL.createObjectURL(blob);
+                })
+                .catch(error => {
+                    console.error('图片加载失败:', url, error);
+                    if (retryCount < 2) { // 最多重试2次
+                        retryCount++;
+                        setTimeout(loadImage, 1000 * retryCount); // 间隔1秒、2秒重试
+                    } else {
+                        imgElement.src = ERROR_IMAGE;
+                        imgElement.style.backgroundColor = '#f0f0f0'; // 添加灰色背景
+                        imgElement.alt = '图片加载失败';
+                    }
+                });
+        };
+
+        loadImage();
+    }
+
+    // 在展示图片时调用
+    data.data.forEach(frame => {
+        const img = document.createElement('img');
+        img.classList.add('frame-preview');
+        img.alt = frame.Name;
+        safeImageLoader(img, frame.Path); // 使用安全加载器
+    });
+
+    // 下载功能实现
+    function downloadFrame(path, filename) {
+        const link = document.createElement('a');
+        link.href = path;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // 提交反馈
+    async function submitFeedback() {
+        const feedbackText = document.getElementById('feedback-text').value;
+
+        try {
+            const response = await authFetch('/tool/comment', {
+                method: 'POST',
+                body: JSON.stringify({ feedback: feedbackText })
+            });
+
+            const data = await response.json();
+            document.getElementById('feedback-response').innerHTML = `提交成功：${data.msg}`;
+        } catch (error) {
+            document.getElementById('feedback-response').innerHTML = error.message;
+        }
+    }
+
+    // 初始化检查登录状态
+    // document.addEventListener('DOMContentLoaded', () => {
+    // if (!localStorage.getItem('sys_auth_token') && !window.location.href.includes('login')) {
+    // window.location.href = 'http://127.0.0.1:9999/';
+    // }
+    // });
+    document.addEventListener('DOMContentLoaded', () => {
+        showSection('home');
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 视频处理平台</title>
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            padding: 20px;
+        }
+
+        /* 容器样式 */
+        .profile-container {
+            background: rgba(255, 255, 255, 0.95);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 头像上传区 */
+        .avatar-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        #user-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            transform: translateY(100%);
+            transition: all 0.3s ease;
+        }
+
+        .avatar-wrapper:hover .avatar-upload {
+            transform: translateY(0);
+        }
+
+        #avatar-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: rgba(255,255,255,0.9);
+            color: #2d3748;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:hover {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        /* 用户信息 */
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .info-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .info-label {
+            display: block;
+            color: #718096;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .info-content {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 1rem;
+            color: #2d3748;
+        }
+
+        /* Toast提示 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .toast.visible {
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #4ecdc4;
+        }
+
+        .toast.error {
+            background: #ff6b6b;
+        }
+    </style>
+</head>
+<body>
+<div class="profile-container">
+    <h2 style="text-align:center; margin-bottom:2rem; color: #2d3748;">个人中心</h2>
+
+    <div class="avatar-section">
+        <div class="avatar-wrapper">
+            <img id="user-avatar" src="/static/img/default-avatar.png"
+                 onerror="this.src='/static/img/error-avatar.png'">
+            <div class="avatar-upload">
+                <input type="file" id="avatar-input" accept="image/*">
+                <button class="upload-btn" onclick="document.getElementById('avatar-input').click()">
+                    更换头像
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-item">
+            <span class="info-label">用户名</span>
+            <div class="info-content" id="username">加载中...</div>
+        </div>
+
+        <div class="info-item">
+            <span class="info-label">会员状态</span>
+            <div class="info-content" id="vip-status">加载中...</div>
+        </div>
+
+        <div class="info-item">
+            <span class="info-label">注册时间</span>
+            <div class="info-content" id="reg-date">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+        // 带认证的请求封装
+        async function authFetch(url, options = {}) {
+        const token = localStorage.getItem('sys_auth_token');
+        if (!token) {
+        window.location.href = '/';
+        return;
+    }
+
+        const headers = {
+        'Authorization': `Bearer ${token}`,
+        ...options.headers
+    };
+
+        try {
+        const response = await fetch(url, {
+        ...options,
+        headers
+    });
+
+        if (response.status === 401) {
+        localStorage.removeItem('sys_auth_token');
+        window.location.href = '/';
+        return;
+    }
+
+        return response;
+    } catch (error) {
+        console.error('请求失败:', error);
+        throw error;
+    }
+    }
+
+        // 获取用户信息
+        async function fetchUserInfo() {
+        try {
+        const response = await authFetch('/tool/user/info');
+        if (!response) return;
+
+        const data = await response.json();
+        if (data.code === 200) {
+        return data.data;
+    } else {
+        throw new Error(data.msg || '获取用户信息失败');
+    }
+    } catch (error) {
+        showToast(error.message, 'error');
+        console.error(error);
+    }
+    }
+
+        // 初始化页面数据
+        async function initProfile() {
+        // 显示加载状态
+        document.getElementById('username').textContent = '加载中...';
+        document.getElementById('vip-status').textContent = '加载中...';
+        document.getElementById('reg-date').textContent = '加载中...';
+
+        try {
+        const userData = await fetchUserInfo();
+        if (!userData) return;
+
+        // 更新页面数据
+        document.getElementById('username').textContent = userData.name;
+        document.getElementById('vip-status').textContent = userData.is_vip ? 'VIP会员' : '普通用户';
+        document.getElementById('reg-date').textContent = new Date(userData.c_time * 1000).toLocaleString();
+
+        if(userData.img) {
+        document.getElementById('user-avatar').src = userData.img + '?t=' + Date.now();
+    }
+    } catch (error) {
+        showToast('用户信息加载失败', 'error');
+    }
+    }
+
+        // 头像上传处理（带JWT验证）
+        document.getElementById('avatar-input').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        showToast('头像上传中...', 'info');
+
+        try {
+        const response = await authFetch('/api/upload-avatar', {
+        method: 'POST',
+        body: formData
+    });
+
+        if (!response) return;
+
+        const data = await response.json();
+        if (data.code === 200) {
+        document.getElementById('user-avatar').src = data.data.url + '?t=' + Date.now();
+        showToast('头像更新成功', 'success');
+    } else {
+        throw new Error(data.msg || '上传失败');
+    }
+    } catch (error) {
+        showToast(`上传失败: ${error.message}`, 'error');
+    }
+    });
+
+        // 初始化时检查登录状态
+        document.addEventListener('DOMContentLoaded', () => {
+        if (!localStorage.getItem('sys_auth_token')) {
+        window.location.href = '/';
+    } else {
+        initProfile();
+    }
+    });
+
+    // 头像上传处理
+    document.getElementById('avatar-input').addEventListener('change', async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        showToast('头像上传中...', 'info');
+
+        try {
+            const response = await fetch('/api/upload-avatar', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('sys_auth_token')}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+            if (data.code === 200) {
+                document.getElementById('user-avatar').src = data.data.url + '?t=' + Date.now();
+                showToast('头像更新成功', 'success');
+            } else {
+                throw new Error(data.msg || '上传失败');
+            }
+        } catch (error) {
+            showToast(`上传失败: ${error.message}`, 'error');
+        }
+    });
+
+    // Toast提示功能
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} visible`;
+
+        setTimeout(() => {
+            toast.classList.remove('visible');
+        }, 3000);
+    }
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', initProfile);
+</script>
+</body>
+</html>
