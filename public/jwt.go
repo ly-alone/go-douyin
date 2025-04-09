@@ -33,7 +33,7 @@ func CreateJwt(username string, userinfo string) (string, error) {
 	return signedToken, nil
 }
 
-func ValidateJwt(c *gin.Context) gin.HandlerFunc {
+func ValidateJwt() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		signedToken := c.GetHeader("Authorization")
 		if signedToken == "" {

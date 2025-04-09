@@ -46,6 +46,10 @@ func (r *Router) Html() {
 		// 渲染 HTML 页面
 		c.HTML(http.StatusOK, "user.html", nil)
 	})
+	r.Engine.GET("/comment", func(c *gin.Context) {
+		// 渲染 HTML 页面
+		c.HTML(http.StatusOK, "comment.html", nil)
+	})
 	r.Engine.Static("/static", "./static")
 	r.Engine.Static("/image", "./image")
 
@@ -65,13 +69,14 @@ func (r *Router) GetHttp() {
 func (r *Router) PostHttp() {
 	r.Engine.POST("tool/login", home.Login)
 	r.Engine.POST("tool/register", home.Register)
-	v2 := r.Engine.Group("tool", public.ValidateJwt(&gin.Context{}))
+	r.Engine.GET("tool/show/comment", home.ShowComment)
+	v2 := r.Engine.Group("tool", public.ValidateJwt(), public.Count.Url())
 	//v2 := r.Engine.Group("tool")
 	{
 		v2.POST("upload", video.VideoFrameCapture)
 		v2.POST("add", video.RemoveWatermark)
 		v2.POST("comment", home.Comment)
-		v2.POST("show/comment", home.ShowComment)
+		//v2.GET("show/comment", home.ShowComment)
 		v2.GET("user/info", home.UserInfo)
 		v2.GET("user/img", home.Img)
 	}

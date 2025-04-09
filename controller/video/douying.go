@@ -18,7 +18,6 @@ type douYin struct{}
 
 // Gin 处理函数，接收前端请求，获取原始视频信息
 func (d douYin) parseShareUrl(shareUrl string) (*public.VideoParseInfo, error) {
-	fmt.Println(000)
 	// 根据请求的 URL 获取视频 ID
 	videoId, err := fetchAndParseVideoID(shareUrl)
 	if err != nil {
@@ -59,6 +58,7 @@ func fetchAndParseVideoID(url string) (string, error) {
 		Get(url)
 	// 如果请求失败并且不是重定向错误，返回错误
 	if err != nil && !errors.Is(err, resty.ErrAutoRedirectDisabled) {
+		fmt.Println(err)
 		return "", fmt.Errorf("请求 URL 失败: %w", err)
 	}
 

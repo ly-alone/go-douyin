@@ -22,25 +22,8 @@ func RemoveWatermark(c *gin.Context) {
 		return
 	}
 	videoShareUrl, _ := public.RegexpMatchUrlFromString(param.Url)
-	path := strings.Split(videoShareUrl, "/")
-	if len(path) >= 1 {
-		//user := c.Value("user")
-		//a := reflect.ValueOf(user)
-		//b := a.MapIndex(reflect.ValueOf("userinfo"))
-		//fmt.Println(b)
-		//userJson, _ := json.Marshal(user)
-		//userInfo := gjson.Get(string(userJson), "userinfo")
-		//userInfoStr := userInfo.String()
-		//userId := gjson.Get(userInfoStr, "user_id")
-		//fmt.Println(userId)
-		//fmt.Println(userInfo)
-		//userAgent := c.GetHeader("User-Agent")
-		//ip := c.RemoteIP()
-		//fmt.Println("userAgent:", userAgent)
-		//fmt.Println("ip:", ip)
-		//记录
-	}
-	res, _ := ParseVideoShareUrl(videoShareUrl)
+	res, err := ParseVideoShareUrl(videoShareUrl)
+	fmt.Println(err)
 	c.JSON(http.StatusOK, gin.H{"data": res, "code": http.StatusOK, "msg": "success"})
 }
 

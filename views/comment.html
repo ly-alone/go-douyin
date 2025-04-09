@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>问题展示</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    body {
+      background: #f0f2f5;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .comment-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #4ecdc4;
+      margin-right: 10px;
+    }
+
+    .user-name {
+      font-weight: 500;
+      color: #2d3748;
+    }
+
+    .comment-content {
+      color: #4a5568;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .comment-meta {
+      display: flex;
+      align-items: center;
+      color: #718096;
+      font-size: 0.9em;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      margin-left: auto;
+    }
+
+    .like-btn, .reply-btn {
+      border: none;
+      background: none;
+      color: #718096;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .like-btn:hover, .reply-btn:hover {
+      color: #4ecdc4;
+    }
+
+    .like-btn.liked {
+      color: #ff6b6b;
+    }
+
+    .reply-form {
+      margin-top: 15px;
+      display: none;
+    }
+
+    .reply-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+
+    .submit-btn {
+      background: #4ecdc4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .time {
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+<div id="comments-list">12313</div>
+
+<script>
+  // 评论模板
+  function createCommentElement(comment) {
+    const div = document.createElement('div');
+    div.className = 'comment-container';
+
+    div.innerHTML = `
+                <div class="user-info">
+                    <div class="user-avatar"></div>
+                    <span class="user-name">${comment.user_info.name || '用户' + comment.user_info.id}</span>
+                    <div class="action-buttons">
+                        <span class="time">${formatTime(comment.created_at)}</span>
+                        <button class="like-btn" data-id="${comment.id}" onclick="toggleLike(${comment.id})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            </svg>
+                            <span>${comment.like_counts}</span>
+                        </button>
+                        <button class="reply-btn" onclick="toggleReplyForm(${comment.id})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/>
+                            </svg>
+                            回复
+                        </button>
+                    </div>
+                </div>
+                <p class="comment-content">${comment.content}</p>
+                <div class="reply-form" id="reply-form-${comment.id}">
+                    <textarea class="reply-input" placeholder="写下你的回复..."></textarea>
+                    <button class="submit-btn" onclick="submitReply(${comment.id})">提交回复</button>
+                </div>
+            `;
+    return div;
+  }
+
+  // 时间格式化
+  function formatTime(isoTime) {
+    const date = new Date(isoTime);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  // 点赞功能
+  function toggleLike(commentId) {
+    const btn = document.querySelector(`.like-btn[data-id="${commentId}"]`);
+    const countSpan = btn.querySelector('span');
+    let count = parseInt(countSpan.textContent);
+
+    // 模拟API调用
+    fetch(`/api/like/${commentId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+            .then(response => response.json())
+            .then(data => {
+              if(data.code === 200) {
+                btn.classList.toggle('liked');
+                countSpan.textContent = data.data.new_likes;
+              }
+            });
+  }
+
+  // 回复功能
+  function toggleReplyForm(commentId) {
+    const form = document.getElementById(`reply-form-${commentId}`);
+    form.style.display = form.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function submitReply(commentId) {
+    const input = document.querySelector(`#reply-form-${commentId} textarea`);
+    const content = input.value.trim();
+
+    if(content) {
+      // 模拟API调用
+      fetch('/tool/show/comment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          content: content,
+          parent_id: commentId
+        })
+      })
+              .then(response => response.json())
+              .then(data => {
+                if(data.code === 200) {
+                  input.value = '';
+                  toggleReplyForm(commentId);
+                  // 实际应用中需要刷新评论列表或动态添加新评论
+                }
+              });
+    }
+  }
+
+  // 初始化加载评论
+  function loadComments() {
+    const container = document.getElementById('comments-list');
+    commentData.data.forEach(comment => {
+      container.appendChild(createCommentElement(comment));
+    });
+  }
+
+  // 启动
+  document.addEventListener('DOMContentLoaded', loadComments);
+</script>
+</body>
+</html>
